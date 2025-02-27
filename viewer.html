@@ -3,22 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Viewer</title>
+    <title>GLB Model Viewer</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        model-viewer { width: 100%; max-width: 600px; height: 500px; }
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .gallery { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        .gallery-item { cursor: pointer; width: 150px; }
+        .viewer-container { display: none; }
+        #model-viewer { width: 100%; height: 500px; }
+        .controls { margin-top: 10px; }
     </style>
 </head>
 <body>
-    <h2>View 3D Model in AR</h2>
-    <model-viewer 
-        src="model.glb" 
-        ar 
-        ar-modes="webxr scene-viewer quick-look"
-        camera-controls 
-        auto-rotate>
-    </model-viewer>
-    <p><a href="models/model.glb" download>Download Model</a></p>
+    <h1>GLB Model Viewer</h1>
+    <div class="gallery" id="gallery"></div>
+    
+    <div class="viewer-container" id="viewerContainer">
+        <model-viewer id="model-viewer" ar ar-modes="scene-viewer quick-look" camera-controls></model-viewer>
+        <div class="controls">
+            <label>Light Intensity: <input type="range" id="lightIntensity" min="0.5" max="5" step="0.1" value="1"></label>
+            <label>Rotate: <input type="checkbox" id="autoRotate"></label>
+        </div>
+    </div>
+
+    <script>
+        const models = [
+            { title: "Model 1", image: "thumb1.jpg", file: "model1.glb" },
+            { title: "Model 2", image: "thumb2.jpg", file: "model2.glb" },
+            { title: "Model 3", image: "thumb3.jpg", file: "model3.glb" }
+        ];
+        
+        const gallery = document.getElementById("gallery");
+        const viewerContainer = document.getElementById("viewerContainer");
+        const modelViewer = document.getElementById("model-viewer");
+        const lightIntensityInput = document.getElementById("lightIntensity");
+        const autoRotateInput = document.getElementById("autoRotate");
+        
+        models.forEach(model => {
+            const item = document.createElement("div");
+            item.classList.add("gallery-item");
+            item.innerHTML = `<img src="${model.image}" width="100"><p>${model.title}</p>`;
+            item.onclick = () => loadModel(model.file);
+            gallery.appendChild(item);
+        });
+        
+        function loadModel(modelFile) {
+            modelViewer.src = modelFile;
+            viewerContainer.style.display = "block";
+        }
+        
+        lightIntensityInput.addEventListener("input", () => {
+            modelViewer.environmentIntensity = lightIntensityInput.value;
+        });
+        
+        autoRotateInput.addEventListener("change", () => {
+            modelViewer.autoRotate = autoRotateInput.checked;
+        });
+    </script>
 </body>
 </html>
