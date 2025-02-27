@@ -20,10 +20,11 @@ def get_scene_bounds(objects):
     return (min_x, max_x), (min_y, max_y), (min_z, max_z)
 
 def rescale_scene(target_height=1.0):
-    """Groups all objects, rescales everything uniformly, and repositions the center to (0,0,0)."""
+    """Groups all objects, rescales everything uniformly, and repositions the center to (0,0,0). Adjusts lights accordingly."""
     
     # Get all valid objects
     objects = [obj for obj in bpy.context.scene.objects if obj.type in {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'}]
+    lights = [obj for obj in bpy.context.scene.objects if obj.type == 'LIGHT']
 
     if not objects:
         print("No valid objects found in the scene.")
@@ -34,7 +35,7 @@ def rescale_scene(target_height=1.0):
     scene_anchor = bpy.context.object
 
     # Parent all objects to the empty
-    for obj in objects:
+    for obj in objects + lights:
         obj.select_set(True)
         obj.parent = scene_anchor
     
@@ -54,6 +55,13 @@ def rescale_scene(target_height=1.0):
     # Apply scale to the parent empty (scaling everything together)
     scene_anchor.scale *= scale_factor
     
+    # Adjust light intensities and radii
+    for light in lights:
+        if light.data.type in {'POINT', 'SPOT', 'SUN', 'AREA'}:
+            light.data.energy *= scale_factor if scale_factor > 1 else scale_factor ** 0.5  # Increase proportionally, reduce gently
+            if hasattr(light.data, 'shadow_soft_size'):
+                light.data.shadow_soft_size *= scale_factor  # Adjust light radius proportionally
+    
     # Apply the transform to freeze the scale
     bpy.ops.object.transform_apply(scale=True)
     
@@ -72,7 +80,7 @@ def rescale_scene(target_height=1.0):
     bpy.ops.object.transform_apply(location=True)
 
     # Unparent objects if needed (optional)
-    for obj in objects:
+    for obj in objects + lights:
         obj.parent = None
 
     # Delete the empty object
@@ -80,7 +88,7 @@ def rescale_scene(target_height=1.0):
 
     bpy.context.view_layer.update()
 
-    print(f"Rescaled scene with factor: {scale_factor}, repositioned bottom center to (0,0,0).")
+    print(f"Rescaled scene with factor: {scale_factor}, repositioned bottom center to (0,0,0), adjusted light intensities and radii.")
 
 # Run the function
 rescale_scene(1.0)
