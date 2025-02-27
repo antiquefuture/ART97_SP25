@@ -29,17 +29,9 @@
 
     <script>
         async function fetchModels() {
-            const response = await fetch("models/");
-            const text = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(text, "text/html");
-            const links = Array.from(doc.querySelectorAll("a"));
-            return links
-                .map(link => link.getAttribute("href"))
-                .filter(name => name.endsWith(".glb"))
-                .map(file => ({ title: file.replace(".glb", ""), file: `models/${file}` }));
-        }
-        
+    const response = await fetch("models/models.json");
+    return response.json();
+}        
         async function setupGallery() {
             const models = await fetchModels();
             const gallery = document.getElementById("gallery");
