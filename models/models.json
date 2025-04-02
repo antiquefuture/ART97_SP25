@@ -1,4 +1,7 @@
 [
     { "title": "Cassandra Cassas", "file": "models/CassandraCassas_AIF_scaled.glb" },
     { "title": "White mesh Model 35", "file": "models/white_mesh_35.glb" }
+    { "title": "Vase", "file": "models/vase.glb" }
+    { "title": "Vase 1", "file": "models/vase(1).glb" }
+    { "title": "Vase 2", "file": "models/vase(2).glb" }
 ]
