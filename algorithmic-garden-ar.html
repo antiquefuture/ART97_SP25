@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithmic Garden - AR Gallery</title>
+    
+    <!-- Model Viewer for AR Support -->
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #000000;
+            --secondary: #ffffff;
+            --accent: #0055ff;
+            --gray-light: #f5f5f5;
+            --gray-medium: #e0e0e0;
+            --gray-dark: #666666;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+            background: var(--secondary);
+            color: var(--primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: var(--secondary);
+            border-bottom: 1px solid var(--gray-medium);
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .title-group {
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.25rem;
+        }
+
+        .subtitle {
+            color: var(--gray-dark);
+            font-size: 0.95rem;
+        }
+
+        /* Student Navigation */
+        .nav-container {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-label {
+            font-size: 0.875rem;
+            color: var(--gray-dark);
+            font-weight: 500;
+        }
+
+        .student-nav {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .student-btn {
+            padding: 0.625rem 1.25rem;
+            background: var(--gray-light);
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: var(--primary);
+        }
+
+        .student-btn:hover {
+            background: var(--secondary);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .student-btn.active {
+            background: var(--accent);
+            color: var(--secondary);
+            border-color: var(--accent);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Work Display */
+        .work-display {
+            display: grid;
+            gap: 2rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Section */
+        .section {
+            background: var(--secondary);
+            border: 1px solid var(--gray-medium);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .section-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .section-description {
+            color: var(--gray-dark);
+            font-size: 0.875rem;
+        }
+
+        /* Image Grid */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .image-card {
+            position: relative;
+            background: var(--gray-light);
+            border: 1px solid var(--gray-medium);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .image-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+            border-color: var(--accent);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .image-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .image-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 0.75rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .image-card:hover .image-label {
+            transform: translateY(0);
+        }
+
+        /* Model Viewer Section */
+        .model-viewer-container {
+            background: var(--gray-light);
+            border: 1px solid var(--gray-medium);
+            min-height: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        model-viewer {
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+        }
+
+        model-viewer::part(default-progress-bar) {
+            height: 4px;
+            background: var(--accent);
+        }
+
+        /* AR Button Styling */
+        model-viewer .ar-button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.2s ease;
+        }
+
+        model-viewer .ar-button:hover {
+            background: #0044dd;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* AR Instructions */
+        .ar-instructions {
+            background: var(--gray-light);
+            border: 1px solid var(--gray-medium);
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .ar-instructions h3 {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            color: var(--primary);
+        }
+
+        .ar-instructions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .ar-instructions li {
+            padding: 0.5rem 0;
+            color: var(--gray-dark);
+            font-size: 0.875rem;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .ar-instructions li:before {
+            content: "→";
+            margin-right: 0.75rem;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* Controls */
+        .model-controls {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-top: 1px solid var(--gray-medium);
+        }
+
+        .control-btn {
+            padding: 0.5rem 1rem;
+            background: var(--secondary);
+            border: 1px solid var(--gray-medium);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            color: var(--primary);
+        }
+
+        .control-btn:hover {
+            background: var(--accent);
+            color: var(--secondary);
+            border-color: var(--accent);
+        }
+
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        .lightbox.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .close-lightbox {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+        }
+
+        .close-lightbox:hover {
+            opacity: 1;
+        }
+
+        .close-lightbox:before,
+        .close-lightbox:after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 2px;
+            background: white;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .close-lightbox:after {
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+
+        /* Loading State */
+        .loading-message {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray-dark);
+        }
+
+        /* Info Cards */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-card {
+            background: var(--gray-light);
+            padding: 1.25rem;
+            border: 1px solid var(--gray-medium);
+        }
+
+        .info-card h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+        }
+
+        .info-card p {
+            font-size: 0.875rem;
+            color: var(--gray-dark);
+            line-height: 1.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1.25rem 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .container {
+                padding: 0 1.5rem;
+                margin: 1.5rem auto;
+            }
+
+            .image-grid {
+                grid-template-columns: 1fr;
+            }
+
+            model-viewer {
+                height: 400px;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            .model-controls {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .student-nav {
+                width: 100%;
+            }
+
+            .student-btn {
+                flex: 1;
+                min-width: calc(50% - 0.25rem);
+            }
+        }
+
+        /* No border radius as requested */
+        * {
+            border-radius: 0 !important;
+        }
+
+        /* AR Badge */
+        .ar-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 1rem;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="title-group">
+                <h1>Algorithmic Garden <span class="ar-badge">AR ENABLED</span></h1>
+                <p class="subtitle">New Media Art Class Exhibition · Scan → Composite → Model → Reality</p>
+            </div>
+            
+            <nav class="nav-container">
+                <span class="nav-label">Select Artist:</span>
+                <div class="student-nav" id="studentNav">
+                    <!-- Student buttons will be populated here -->
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="workDisplay" class="work-display">
+            <!-- Dynamic content will be loaded here -->
+        </div>
+    </main>
+
+    <!-- Lightbox for full-size images -->
+    <div class="lightbox" id="lightbox">
+        <div class="close-lightbox"></div>
+        <img src="" alt="Full view">
+    </div>
+
+    <script type="module">
+        // Sample student data - Replace with your actual data
+        const studentsData = {
+            "Alex Chen": {
+                bio: "Exploring the intersection of organic forms and digital decay",
+                compositions: [
+                    { url: "https://via.placeholder.com/600x600/ff6b6b/ffffff?text=Scan+Composite+1", title: "Decay Pattern I" },
+                    { url: "https://via.placeholder.com/600x600/4ecdc4/ffffff?text=Scan+Composite+2", title: "Decay Pattern II" },
+                    { url: "https://via.placeholder.com/600x600/45b7d1/ffffff?text=Scan+Composite+3", title: "Decay Pattern III" }
+                ],
+                renders: [
+                    { url: "https://via.placeholder.com/600x600/96ceb4/ffffff?text=3D+Render+1", title: "Virtual Garden I" },
+                    { url: "https://via.placeholder.com/600x600/ffeaa7/ffffff?text=3D+Render+2", title: "Virtual Garden II" },
+                    { url: "https://via.placeholder.com/600x600/dfe6e9/ffffff?text=3D+Render+3", title: "Virtual Garden III" }
+                ],
+                model: {
+                    url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+                    poster: "https://via.placeholder.com/600x400/333333/ffffff?text=3D+Model+Preview",
+                    alt: "Alex Chen's 3D algorithmic sculpture"
+                }
+            },
+            "Maria Garcia": {
+                bio: "Investigating texture degradation through iterative scanning",
+                compositions: [
+                    { url: "https://via.placeholder.com/600x600/fd79a8/ffffff?text=Scan+Composite+1", title: "Texture Study A" },
+                    { url: "https://via.placeholder.com/600x600/fdcb6e/ffffff?text=Scan+Composite+2", title: "Texture Study B" },
+                    { url: "https://via.placeholder.com/600x600/6c5ce7/ffffff?text=Scan+Composite+3", title: "Texture Study C" }
+                ],
+                renders: [
+                    { url: "https://via.placeholder.com/600x600/a29bfe/ffffff?text=3D+Render+1", title: "Synthetic Nature I" },
+                    { url: "https://via.placeholder.com/600x600/ffeaa7/ffffff?text=3D+Render+2", title: "Synthetic Nature II" },
+                    { url: "https://via.placeholder.com/600x600/55a3ff/ffffff?text=3D+Render+3", title: "Synthetic Nature III" }
+                ],
+                model: {
+                    url: "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb",
+                    poster: "https://via.placeholder.com/600x400/333333/ffffff?text=3D+Model+Preview",
+                    alt: "Maria Garcia's textured form exploration"
+                }
+            },
+            "Jordan Kim": {
+                bio: "Merging botanical specimens with digital artifacts",
+                compositions: [
+                    { url: "https://via.placeholder.com/600x600/00b894/ffffff?text=Scan+Composite+1", title: "Digital Flora I" },
+                    { url: "https://via.placeholder.com/600x600/00cec9/ffffff?text=Scan+Composite+2", title: "Digital Flora II" },
+                    { url: "https://via.placeholder.com/600x600/0984e3/ffffff?text=Scan+Composite+3", title: "Digital Flora III" }
+                ],
+                renders: [
+                    { url: "https://via.placeholder.com/600x600/6c5ce7/ffffff?text=3D+Render+1", title: "Hybrid Growth I" },
+                    { url: "https://via.placeholder.com/600x600/a29bfe/ffffff?text=3D+Render+2", title: "Hybrid Growth II" },
+                    { url: "https://via.placeholder.com/600x600/e17055/ffffff?text=3D+Render+3", title: "Hybrid Growth III" }
+                ],
+                model: {
+                    url: "https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb",
+                    poster: "https://via.placeholder.com/600x400/333333/ffffff?text=3D+Model+Preview",
+                    alt: "Jordan Kim's botanical-digital hybrid"
+                }
+            },
+            "Sam Liu": {
+                bio: "Capturing the essence of everyday objects through glitch aesthetics",
+                compositions: [
+                    { url: "https://via.placeholder.com/600x600/f39c12/ffffff?text=Scan+Composite+1", title: "Object Memory I" },
+                    { url: "https://via.placeholder.com/600x600/e74c3c/ffffff?text=Scan+Composite+2", title: "Object Memory II" },
+                    { url: "https://via.placeholder.com/600x600/9b59b6/ffffff?text=Scan+Composite+3", title: "Object Memory III" }
+                ],
+                renders: [
+                    { url: "https://via.placeholder.com/600x600/3498db/ffffff?text=3D+Render+1", title: "Glitched Reality I" },
+                    { url: "https://via.placeholder.com/600x600/2ecc71/ffffff?text=3D+Render+2", title: "Glitched Reality II" },
+                    { url: "https://via.placeholder.com/600x600/f1c40f/ffffff?text=3D+Render+3", title: "Glitched Reality III" }
+                ],
+                model: {
+                    url: "https://modelviewer.dev/shared-assets/models/shishkebab.glb",
+                    poster: "https://via.placeholder.com/600x400/333333/ffffff?text=3D+Model+Preview",
+                    alt: "Sam Liu's glitched object study"
+                }
+            }
+        };
+
+        let currentStudent = null;
+        let modelViewer = null;
+
+        // Initialize the gallery
+        function init() {
+            populateStudentNav();
+            // Load first student by default
+            const firstStudent = Object.keys(studentsData)[0];
+            loadStudentWork(firstStudent);
+        }
+
+        // Populate student navigation
+        function populateStudentNav() {
+            const nav = document.getElementById('studentNav');
+            Object.keys(studentsData).forEach((name, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'student-btn';
+                btn.textContent = name;
+                btn.onclick = () => {
+                    document.querySelectorAll('.student-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadStudentWork(name);
+                };
+                if (index === 0) btn.classList.add('active');
+                nav.appendChild(btn);
+            });
+        }
+
+        // Load student work
+        function loadStudentWork(studentName) {
+            currentStudent = studentName;
+            const data = studentsData[studentName];
+            const display = document.getElementById('workDisplay');
+            
+            display.style.opacity = '0';
+            
+            setTimeout(() => {
+                display.innerHTML = `
+                    <!-- Artist Info -->
+                    <div class="section">
+                        <div class="info-grid">
+                            <div class="info-card">
+                                <h4>Artist</h4>
+                                <p>${studentName}</p>
+                            </div>
+                            <div class="info-card">
+                                <h4>Project Focus</h4>
+                                <p>${data.bio}</p>
+                            </div>
+                            <div class="info-card">
+                                <h4>Process</h4>
+                                <p>2D Scanning → Digital Compositing → 3D Modeling → AR Experience</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scanned Compositions -->
+                    <div class="section">
+                        <div class="section-header">
+                            <h2 class="section-title">Scanned Compositions</h2>
+                            <p class="section-description">Original 2D scans composited and degraded through iterative digital processes</p>
+                        </div>
+                        <div class="image-grid">
+                            ${data.compositions.map((item, i) => `
+                                <div class="image-card" onclick="openLightbox('${item.url}')">
+                                    <img src="${item.url}" alt="${item.title}" loading="lazy">
+                                    <div class="image-label">${item.title}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- 3D Renders -->
+                    <div class="section">
+                        <div class="section-header">
+                            <h2 class="section-title">3D Renders</h2>
+                            <p class="section-description">Blender renders showcasing the textured 3D models in virtual environments</p>
+                        </div>
+                        <div class="image-grid">
+                            ${data.renders.map((item, i) => `
+                                <div class="image-card" onclick="openLightbox('${item.url}')">
+                                    <img src="${item.url}" alt="${item.title}" loading="lazy">
+                                    <div class="image-label">${item.title}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Interactive 3D Model with AR -->
+                    <div class="section">
+                        <div class="section-header">
+                            <h2 class="section-title">Interactive 3D Model</h2>
+                            <p class="section-description">Explore the model in 3D or place it in your space using AR</p>
+                        </div>
+                        
+                        <div class="model-viewer-container">
+                            <model-viewer
+                                id="modelViewer"
+                                src="${data.model.url}"
+                                poster="${data.model.poster}"
+                                alt="${data.model.alt}"
+                                auto-rotate
+                                camera-controls
+                                shadow-intensity="1"
+                                ar
+                                ar-modes="webxr scene-viewer quick-look"
+                                ar-scale="auto"
+                                ios-src="${data.model.url}"
+                                xr-environment>
+                                
+                                <button slot="ar-button" class="ar-button">
+                                    View in AR 🔲
+                                </button>
+                                
+                                <div class="progress-bar" slot="progress-bar">
+                                    <div class="update-bar"></div>
+                                </div>
+                            </model-viewer>
+                            
+                            <div class="model-controls">
+                                <button class="control-btn" onclick="resetModelView()">Reset View</button>
+                                <button class="control-btn" onclick="toggleAutoRotate()">Toggle Rotation</button>
+                                <button class="control-btn" onclick="changeEnvironment()">Change Light</button>
+                            </div>
+                        </div>
+
+                        <div class="ar-instructions">
+                            <h3>AR Viewing Instructions</h3>
+                            <ul>
+                                <li><strong>Mobile (iOS):</strong> Tap "View in AR" to open in AR Quick Look</li>
+                                <li><strong>Mobile (Android):</strong> Tap "View in AR" to open in Scene Viewer</li>
+                                <li><strong>Desktop:</strong> Use mouse to rotate, scroll to zoom the 3D model</li>
+                                <li><strong>AR Placement:</strong> Once in AR, move your device to scan the floor, then tap to place</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                
+                display.style.opacity = '1';
+                
+                // Store reference to model viewer
+                modelViewer = document.getElementById('modelViewer');
+            }, 300);
+        }
+
+        // Model viewer controls
+        window.resetModelView = function() {
+            if (modelViewer) {
+                modelViewer.cameraOrbit = '0deg 75deg 105%';
+                modelViewer.fieldOfView = '30deg';
+            }
+        };
+
+        window.toggleAutoRotate = function() {
+            if (modelViewer) {
+                modelViewer.autoRotate = !modelViewer.autoRotate;
+            }
+        };
+
+        let environmentIndex = 0;
+        const environments = ['', 'neutral', 'legacy'];
+        window.changeEnvironment = function() {
+            if (modelViewer) {
+                environmentIndex = (environmentIndex + 1) % environments.length;
+                if (environments[environmentIndex]) {
+                    modelViewer.setAttribute('environment-image', environments[environmentIndex]);
+                } else {
+                    modelViewer.removeAttribute('environment-image');
+                }
+            }
+        };
+
+        // Lightbox functionality
+        window.openLightbox = function(src) {
+            const lightbox = document.getElementById('lightbox');
+            const img = lightbox.querySelector('img');
+            img.src = src;
+            lightbox.classList.add('active');
+        };
+
+        // Close lightbox
+        document.getElementById('lightbox').addEventListener('click', function() {
+            this.classList.remove('active');
+        });
+
+        // Prevent image dragging
+        document.addEventListener('dragstart', function(e) {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+            }
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
