@@ -1,12 +1,12 @@
 {
   "exhibition": {
     "title": "Algorithmic Garden",
-    "subtitle": "New Media Art Class Exhibition · Scan → Composite → Model → Reality",
-    "description": "Student projects exploring the intersection of physical scanning, digital compositing, and augmented reality"
+    "subtitle": "ART 97 - Introduction to Electronic Art, 2025",
+    "description": "Sacramento State student projects exploring the intersection of physical scanning, digital compositing, and augmented reality"
   },
   "artists": [
     {
-      "name": "Alex Chen",
+      "name": "Ariel Gutierrez",
       "bio": "Exploring the intersection of organic forms and digital decay",
       "compositions": [
         {
@@ -40,7 +40,7 @@
         "url": "assets/models/alex-chen.glb",
         "iosUrl": "assets/models/alex-chen.usdz",
         "poster": "assets/models/alex-chen-poster.jpg",
-        "alt": "Alex Chen's 3D algorithmic sculpture"
+        "alt": "Ariel Gutierrez' 3D algorithmic sculpture"
       }
     },
     {
