@@ -6,7 +6,7 @@
     <title>Algorithmic Garden - AR Gallery</title>
     
     <!-- Model Viewer for AR Support -->
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
     
     <style>
         * {
@@ -225,26 +225,43 @@
             background: var(--accent);
         }
 
-        /* AR Button Styling */
-        model-viewer .ar-button {
+        /* Custom AR Button */
+        .ar-button-container {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 10;
+        }
+
+        .custom-ar-button {
             background: var(--accent);
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
             font-weight: 600;
             font-size: 0.9rem;
-            position: absolute;
-            bottom: 1rem;
-            right: 1rem;
             cursor: pointer;
             box-shadow: var(--shadow);
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        model-viewer .ar-button:hover {
+        .custom-ar-button:hover:not(:disabled) {
             background: #0044dd;
             transform: translateY(-2px);
             box-shadow: var(--shadow-hover);
+        }
+
+        .custom-ar-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .custom-ar-button svg {
+            width: 20px;
+            height: 20px;
         }
 
         /* AR Instructions */
@@ -279,6 +296,33 @@
             margin-right: 0.75rem;
             color: var(--accent);
             font-weight: bold;
+        }
+
+        /* AR Status Message */
+        .ar-status {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .ar-status.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .ar-status.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .ar-status.show {
+            display: block;
         }
 
         /* Controls */
@@ -364,13 +408,6 @@
             transform: translate(-50%, -50%) rotate(-45deg);
         }
 
-        /* Loading State */
-        .loading-message {
-            text-align: center;
-            padding: 3rem;
-            color: var(--gray-dark);
-        }
-
         /* Info Cards */
         .info-grid {
             display: grid;
@@ -396,6 +433,21 @@
             font-size: 0.875rem;
             color: var(--gray-dark);
             line-height: 1.5;
+        }
+
+        /* Debug Info */
+        .debug-info {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: monospace;
+            font-size: 0.75rem;
+            display: none;
+        }
+
+        .debug-info.show {
+            display: block;
         }
 
         /* Responsive */
@@ -457,6 +509,20 @@
             margin-left: 1rem;
             letter-spacing: 0.05em;
         }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -504,7 +570,10 @@
                     { url: "https://via.placeholder.com/600x600/dfe6e9/ffffff?text=3D+Render+3", title: "Virtual Garden III" }
                 ],
                 model: {
+                    // Using a model that works well with iOS AR Quick Look
                     url: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+                    // iOS requires a USDZ file for AR Quick Look
+                    iosUrl: "https://modelviewer.dev/shared-assets/models/Astronaut.usdz",
                     poster: "https://via.placeholder.com/600x400/333333/ffffff?text=3D+Model+Preview",
                     alt: "Alex Chen's 3D algorithmic sculpture"
                 }
@@ -523,6 +592,7 @@
                 ],
                 model: {
                     url: "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb",
+                    iosUrl: "https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz",
                     poster: "https://via.placeholder.com/600x400/333333/ffffff?text=3D+Model+Preview",
                     alt: "Maria Garcia's textured form exploration"
                 }
@@ -541,6 +611,7 @@
                 ],
                 model: {
                     url: "https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb",
+                    iosUrl: "https://modelviewer.dev/shared-assets/models/NeilArmstrong.usdz",
                     poster: "https://via.placeholder.com/600x400/333333/ffffff?text=3D+Model+Preview",
                     alt: "Jordan Kim's botanical-digital hybrid"
                 }
@@ -559,6 +630,7 @@
                 ],
                 model: {
                     url: "https://modelviewer.dev/shared-assets/models/shishkebab.glb",
+                    iosUrl: "https://modelviewer.dev/shared-assets/models/shishkebab.usdz",
                     poster: "https://via.placeholder.com/600x400/333333/ffffff?text=3D+Model+Preview",
                     alt: "Sam Liu's glitched object study"
                 }
@@ -567,6 +639,31 @@
 
         let currentStudent = null;
         let modelViewer = null;
+        let debugMode = false; // Set to true to see debug info
+
+        // Detect iOS Safari
+        function isIOSSafari() {
+            const ua = window.navigator.userAgent;
+            const iOS = !!ua.match(/iPad/i) || !!ua.match(/iPhone/i);
+            const webkit = !!ua.match(/WebKit/i);
+            const iOSSafari = iOS && webkit && !ua.match(/CriOS/i) && !ua.match(/FxiOS/i);
+            return iOSSafari;
+        }
+
+        // Detect if AR is supported
+        function detectARSupport() {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isAndroid = /Android/.test(navigator.userAgent);
+            const hasWebXR = 'xr' in navigator;
+            
+            return {
+                isIOS: isIOS,
+                isAndroid: isAndroid,
+                hasWebXR: hasWebXR,
+                isSafari: isIOSSafari(),
+                supportsAR: isIOS || (isAndroid && hasWebXR)
+            };
+        }
 
         // Initialize the gallery
         function init() {
@@ -598,10 +695,14 @@
             currentStudent = studentName;
             const data = studentsData[studentName];
             const display = document.getElementById('workDisplay');
+            const arSupport = detectARSupport();
             
             display.style.opacity = '0';
             
             setTimeout(() => {
+                // Determine which model URL to use
+                const modelUrl = arSupport.isIOS && data.model.iosUrl ? data.model.iosUrl : data.model.url;
+                
                 display.innerHTML = `
                     <!-- Artist Info -->
                     <div class="section">
@@ -664,6 +765,7 @@
                             <model-viewer
                                 id="modelViewer"
                                 src="${data.model.url}"
+                                ${data.model.iosUrl ? `ios-src="${data.model.iosUrl}"` : ''}
                                 poster="${data.model.poster}"
                                 alt="${data.model.alt}"
                                 auto-rotate
@@ -672,17 +774,19 @@
                                 ar
                                 ar-modes="webxr scene-viewer quick-look"
                                 ar-scale="auto"
-                                ios-src="${data.model.url}"
-                                xr-environment>
-                                
-                                <button slot="ar-button" class="ar-button">
-                                    View in AR 🔲
-                                </button>
-                                
-                                <div class="progress-bar" slot="progress-bar">
-                                    <div class="update-bar"></div>
-                                </div>
+                                xr-environment
+                                quick-look-browsers="safari chrome">
                             </model-viewer>
+                            
+                            <div class="ar-button-container">
+                                <button id="customARButton" class="custom-ar-button" style="display: none;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" stroke="currentColor"/>
+                                        <polyline points="11 7 11 13 17 13"/>
+                                    </svg>
+                                    <span id="arButtonText">View in AR</span>
+                                </button>
+                            </div>
                             
                             <div class="model-controls">
                                 <button class="control-btn" onclick="resetModelView()">Reset View</button>
@@ -691,48 +795,173 @@
                             </div>
                         </div>
 
+                        <div id="arStatus" class="ar-status"></div>
+
                         <div class="ar-instructions">
                             <h3>AR Viewing Instructions</h3>
                             <ul>
-                                <li><strong>Mobile (iOS):</strong> Tap "View in AR" to open in AR Quick Look</li>
-                                <li><strong>Mobile (Android):</strong> Tap "View in AR" to open in Scene Viewer</li>
+                                <li><strong>iOS Safari:</strong> ${arSupport.isSafari ? 'Tap "View in AR" to open in AR Quick Look' : 'Please open this page in Safari to use AR'}</li>
+                                <li><strong>Android Chrome:</strong> ${arSupport.isAndroid ? 'Tap "View in AR" to open in Scene Viewer' : 'AR available on Android devices'}</li>
                                 <li><strong>Desktop:</strong> Use mouse to rotate, scroll to zoom the 3D model</li>
-                                <li><strong>AR Placement:</strong> Once in AR, move your device to scan the floor, then tap to place</li>
+                                <li><strong>AR Placement:</strong> Once in AR mode, scan the floor and tap to place the model</li>
                             </ul>
                         </div>
+
+                        ${debugMode ? `
+                        <div class="debug-info show">
+                            <strong>Debug Information:</strong><br>
+                            User Agent: ${navigator.userAgent}<br>
+                            Platform: ${navigator.platform}<br>
+                            iOS: ${arSupport.isIOS}<br>
+                            Android: ${arSupport.isAndroid}<br>
+                            Safari: ${arSupport.isSafari}<br>
+                            WebXR: ${arSupport.hasWebXR}<br>
+                            AR Support: ${arSupport.supportsAR}<br>
+                            Model URL: ${data.model.url}<br>
+                            iOS Model URL: ${data.model.iosUrl || 'Not provided'}
+                        </div>
+                        ` : ''}
                     </div>
                 `;
                 
                 display.style.opacity = '1';
                 
-                // Store reference to model viewer
-                modelViewer = document.getElementById('modelViewer');
+                // Setup AR after model viewer is loaded
+                setTimeout(() => {
+                    setupARButton(data.model);
+                }, 100);
             }, 300);
+        }
+
+        // Setup custom AR button
+        function setupARButton(modelData) {
+            const viewer = document.getElementById('modelViewer');
+            const customButton = document.getElementById('customARButton');
+            const arStatus = document.getElementById('arStatus');
+            const arSupport = detectARSupport();
+            
+            if (!viewer || !customButton) return;
+            
+            // Show button if AR is supported
+            if (arSupport.supportsAR) {
+                customButton.style.display = 'flex';
+                
+                customButton.onclick = async () => {
+                    const buttonText = document.getElementById('arButtonText');
+                    const originalText = buttonText.textContent;
+                    
+                    try {
+                        customButton.disabled = true;
+                        buttonText.innerHTML = '<span class="loading-spinner"></span> Launching AR...';
+                        
+                        if (arSupport.isIOS) {
+                            // For iOS, we need to use the ios-src with USDZ format
+                            if (modelData.iosUrl) {
+                                // Create a temporary anchor element to trigger USDZ download
+                                const a = document.createElement('a');
+                                a.href = modelData.iosUrl;
+                                a.rel = 'ar';
+                                
+                                // Create img element for preview
+                                const img = document.createElement('img');
+                                img.style.display = 'none';
+                                document.body.appendChild(img);
+                                
+                                a.appendChild(img);
+                                document.body.appendChild(a);
+                                a.click();
+                                
+                                // Clean up
+                                setTimeout(() => {
+                                    document.body.removeChild(a);
+                                }, 100);
+                                
+                                showStatus('AR Quick Look launched! Look for the AR viewer.', 'success');
+                            } else {
+                                // Fallback: try to use model-viewer's AR
+                                if (viewer.canActivateAR) {
+                                    await viewer.activateAR();
+                                    showStatus('AR mode activated!', 'success');
+                                } else {
+                                    showStatus('Please provide a USDZ file for iOS AR support', 'error');
+                                }
+                            }
+                        } else if (arSupport.isAndroid) {
+                            // For Android, use model-viewer's built-in AR
+                            if (viewer.canActivateAR) {
+                                await viewer.activateAR();
+                                showStatus('AR mode activated!', 'success');
+                            } else {
+                                showStatus('AR not available. Please ensure you have Google Play Services for AR installed.', 'error');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('AR activation error:', error);
+                        showStatus(`Failed to launch AR: ${error.message}`, 'error');
+                    } finally {
+                        customButton.disabled = false;
+                        buttonText.textContent = originalText;
+                    }
+                };
+                
+                // Listen for AR events from model-viewer
+                viewer.addEventListener('ar-status', (event) => {
+                    if (event.detail.status === 'failed') {
+                        showStatus('AR failed to start. Please try again.', 'error');
+                    }
+                });
+                
+                viewer.addEventListener('ar-tracking', (event) => {
+                    if (event.detail.state === 'tracking') {
+                        showStatus('Model placed successfully!', 'success');
+                        setTimeout(() => hideStatus(), 3000);
+                    }
+                });
+            } else {
+                // AR not supported
+                if (!arSupport.isSafari && arSupport.isIOS) {
+                    showStatus('Please open this page in Safari to use AR features', 'error');
+                } else if (!arSupport.isIOS && !arSupport.isAndroid) {
+                    showStatus('AR features are available on iOS and Android mobile devices', 'error');
+                }
+            }
+            
+            function showStatus(message, type = '') {
+                arStatus.textContent = message;
+                arStatus.className = 'ar-status show ' + type;
+            }
+            
+            function hideStatus() {
+                arStatus.classList.remove('show');
+            }
         }
 
         // Model viewer controls
         window.resetModelView = function() {
-            if (modelViewer) {
-                modelViewer.cameraOrbit = '0deg 75deg 105%';
-                modelViewer.fieldOfView = '30deg';
+            const viewer = document.getElementById('modelViewer');
+            if (viewer) {
+                viewer.cameraOrbit = '0deg 75deg 105%';
+                viewer.fieldOfView = '30deg';
             }
         };
 
         window.toggleAutoRotate = function() {
-            if (modelViewer) {
-                modelViewer.autoRotate = !modelViewer.autoRotate;
+            const viewer = document.getElementById('modelViewer');
+            if (viewer) {
+                viewer.autoRotate = !viewer.autoRotate;
             }
         };
 
         let environmentIndex = 0;
         const environments = ['', 'neutral', 'legacy'];
         window.changeEnvironment = function() {
-            if (modelViewer) {
+            const viewer = document.getElementById('modelViewer');
+            if (viewer) {
                 environmentIndex = (environmentIndex + 1) % environments.length;
                 if (environments[environmentIndex]) {
-                    modelViewer.setAttribute('environment-image', environments[environmentIndex]);
+                    viewer.setAttribute('environment-image', environments[environmentIndex]);
                 } else {
-                    modelViewer.removeAttribute('environment-image');
+                    viewer.removeAttribute('environment-image');
                 }
             }
         };
@@ -759,6 +988,11 @@
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', init);
+
+        // Log AR capabilities for debugging
+        if (debugMode) {
+            console.log('AR Support Detection:', detectARSupport());
+        }
     </script>
 </body>
 </html>
