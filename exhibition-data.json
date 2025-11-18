@@ -44,7 +44,7 @@
       }
     },
     {
-      "name": "Maria Garcia",
+      "name": "Lindsey Dobrowolski",
       "bio": "Investigating texture degradation through iterative scanning",
       "compositions": [
         {
@@ -75,8 +75,8 @@
         }
       ],
       "model": {
-        "url": "assets/models/maria-garcia.glb",
-        "iosUrl": "assets/models/maria-garcia.usdz",
+        "url": "assets/models/2025/LindseyDobrowolski_AIF_optimized.glb",
+        "iosUrl": "assets/models/2025/LindseyDobrowolski_AIF_optimized.usdz",
         "poster": "assets/models/maria-garcia-poster.jpg",
         "alt": "Maria Garcia's textured form exploration"
       }
