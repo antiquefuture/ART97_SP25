@@ -82,8 +82,8 @@
       }
     },
     {
-      "name": "Jordan Kim",
-      "bio": "Merging botanical specimens with digital artifacts",
+      "name": "Tallula Van de Heetkamp",
+      "bio": "You like Jazz?",
       "compositions": [
         {
           "url": "assets/compositions/jordan-kim-comp-1.jpg",
@@ -113,10 +113,10 @@
         }
       ],
       "model": {
-        "url": "assets/models/jordan-kim.glb",
-        "iosUrl": "assets/models/jordan-kim.usdz",
+        "url": "assets/models/2025/Tallula Van de Heetkamp_AIF_JWEdit_optimized.glb",
+        "iosUrl": "assets/models/2025/Tallula Van de Heetkamp_AIF_JWEdit_optimized.usdz",
         "poster": "assets/models/jordan-kim-poster.jpg",
-        "alt": "Jordan Kim's botanical-digital hybrid"
+        "alt": "Tallulahs Jazz"
       }
     },
     {
